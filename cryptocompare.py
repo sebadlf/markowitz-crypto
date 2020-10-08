@@ -2,12 +2,12 @@ import requests, pandas as pd
 import numpy as np
 import tqdm
 import datetime as dt
-import claveCryptocompare
-
+from  keys import *
+import utils
 
 def AvailableCoinList():
     url='https://min-api.cryptocompare.com/data/blockchain/list'
-    api_key = claveCryptocompare.CLAVE
+    api_key = CRYPTOCOMPARE_KEY
     params = {'api_key': api_key}
     r = requests.get(url, params=params)
     js = r.json()
@@ -17,7 +17,7 @@ def AvailableCoinList():
 
 def DailySymbolVolSingleExchange(fsym='BTC',tsym='USD',limit=30):
     url='https://min-api.cryptocompare.com/data/exchange/symbol/histoday?'
-    api_key = claveCryptocompare.CLAVE
+    api_key = CRYPTOCOMPARE_KEY
     params = {'api_key': api_key,'fsym':fsym,'tsym':tsym,'limit':limit}
     r = requests.get(url, params=params)
     js = r.json()['Data']
@@ -37,7 +37,7 @@ def DailySymbolVolSingleExchange(fsym='BTC',tsym='USD',limit=30):
     
 def histoDay(e,fsym,tsym,toTs=None,limit = 2000, aggregate=1, allData='true'):
     url = 'https://min-api.cryptocompare.com/data/v2/histoday'
-    api_key = claveCryptocompare.CLAVE
+    api_key = CRYPTOCOMPARE_KEY
     params = {'api_key': api_key, 'e': e, 'fsym': fsym, 'tsym': tsym, 'allData': allData, 'toTs': toTs, 'limit': limit, 'aggregate': aggregate}
     r = requests.get(url, params=params)
     js = r.json()['Data']['Data']
@@ -51,20 +51,37 @@ def histoDay(e,fsym,tsym,toTs=None,limit = 2000, aggregate=1, allData='true'):
 
 
 
-def mutiple_close_prices():
-    tablas = {}  
-    for ticker in tqdm.tqdm(tickers):
-        data = histoDay('CCCAGG',ticker,'USD')
-        data = data.set_index('time')
-        tablas[ticker] = data.drop(['open','high','low','volumefrom','volumeto'],axis=1)
-        
+def mutiple_close_prices(tickers):
+    tablas = {}
+    for ticker in tqdm.tqdm(tickers):                
+        try:
+            data = histoDay('CCCAGG',ticker,'USD')
+            data = data.set_index('time')
+            tablas[ticker] = data.drop(['open','high','low','volumefrom','volumeto'],axis=1)
+        except:
+            print('Error al descargar ' + ticker)
+
+    tickers = list(tablas.keys())
+
     tabla = pd.DataFrame(tablas[tickers[0]])
     for i in range (1,len(tickers)):
         tabla = pd.concat([tabla, tablas[tickers[i]]],axis=1)
     tabla.columns = tickers
     return tabla
 
-def topXExchange(cantidad=50):
+def get_mutiple_close_prices(tickers, cache_days = 1):
+    if (utils.file_exists('prices') and (utils.is_older_than('prices', cache_days) == False)):
+        top = utils.open('prices')
+    else:
+        top = mutiple_close_prices(tickers)
+        utils.save('prices', top)    
+        
+    return top
+
+
+def download_top_tickers(cantidad=50):
+    '''Descarga los X tickers con mayor volumen dentro de  los ultimos 30 dias'''
+
     todosLosTickers= list(AvailableCoinList())
 
     values = []
@@ -77,18 +94,20 @@ def topXExchange(cantidad=50):
             })
         except:
             print("Error con ticker " + ticker)
-        resultado = pd.DataFrame(values)                     
+
+        resultado = pd.DataFrame(values)     
+                
     return resultado.sort_values("volumen", ascending=False).head(cantidad)
 
-def estadoSeleccion(dias=30,tickers=50):
-    hoy=dt.date.today()
-    ultimaCorrida=claveCryptocompare.ULTIMACORRIDA
-    try:
-        if (ultimaCorrida == ''):
-            print('Entro por vacio')
-            claveCryptocompare.ULTIMACORRIDA=hoy
-    except:
-        if (ultimaCorrida < (hoy-dt.timedelta(days=dias))):
-            print('Entro por fecha')
-
-            
+def get_top_tickers(cantidad = 50, cache_days = 30):
+    if (utils.file_exists('top-tickers') and (utils.is_older_than('top-tickers', 5) == False)):
+        top = utils.open('top-tickers')
+    else:
+        top = download_top_tickers(cantidad)
+        utils.save('top-tickers', top)    
+        
+    return top
+    
+    
+    
+    
