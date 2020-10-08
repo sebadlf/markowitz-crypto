@@ -32,9 +32,7 @@ def DailySymbolVolSingleExchange(fsym='BTC',tsym='USD',limit=30):
         total=0
     return total
 
-
-
-    
+   
 def histoDay(e,fsym,tsym,toTs=None,limit = 2000, aggregate=1, allData='true'):
     url = 'https://min-api.cryptocompare.com/data/v2/histoday'
     api_key = claveCryptocompare.CLAVE
