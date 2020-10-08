@@ -58,3 +58,4 @@ def calc_variacion(data):
 
 cryptos = ['BTC', 'ETH', 'XRP', 'BCH', 'LINK', 'CRO', 'BNB', 'ADA', 'LTC', 'EOS', 'TRX', 'VET', 'MIOTA', 'DASH', 'ETC', 'OMG', 'DOGE', 'BAT', 'DGB', 'YFI', 'YFII', 'SXP', 'UNI', 'DOT', 'XLM', 'COMP', 'ATOM', 'LEND', 'BAND', 'BAL', 'MKR', 'ALGO', 'ZIL', 'KAVA']
 
+print('hola')
