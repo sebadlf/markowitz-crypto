@@ -123,7 +123,7 @@ def calc_proportions(df):
         if (result[key]['max'] < result[key]['min']):
             result[key]['max'] = result[key]['min']           
 
-    print(result)
+    #print(result)
 
     return result
 
