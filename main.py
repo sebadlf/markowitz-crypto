@@ -20,5 +20,5 @@ tickers = top.ticker
 # Obtiene el historico de precios de los tickers pasados como parametros
 prices = cryptocompare.get_mutiple_close_prices(tickers, cache_days= 1)
 
-evolution = markowitz_evolution(prices, step=7, count=5, q_inicial=1500)
+evolution = markowitz_evolution(prices, step=7, count=52, q_inicial=1500)
 utils.save('mark', evolution) 
