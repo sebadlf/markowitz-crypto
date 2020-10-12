@@ -3,6 +3,8 @@ keys.py
 files/
 
 .DS_STORE
+.settings
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

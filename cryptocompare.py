@@ -84,6 +84,7 @@ def download_top_tickers(cantidad=50):
 
     values = []
     for i in tqdm.tqdm(range(len(todosLosTickers))):
+    #for i in tqdm.tqdm(range(50)):
         ticker = todosLosTickers[i]
         try:            
             values.append({
@@ -98,7 +99,7 @@ def download_top_tickers(cantidad=50):
     return resultado.sort_values("volumen", ascending=False).head(cantidad)
 
 def get_top_tickers(cantidad = 50, cache_days = 30):
-    if (utils.file_exists('top-tickers') and (utils.is_older_than('top-tickers', 5) == False)):
+    if (utils.file_exists('top-tickers') and (utils.is_older_than('top-tickers', cache_days) == False)):
         top = utils.open('top-tickers')
     else:
         top = download_top_tickers(cantidad)

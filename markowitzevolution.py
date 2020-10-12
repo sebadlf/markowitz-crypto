@@ -11,6 +11,7 @@ import requests, pandas as pd
 import numpy as np
 import tqdm
 import random
+import utils
 from cryptocompare import *
 
 def filter_tickers(data, date, minimum_rows):
@@ -27,17 +28,19 @@ def filter_tickers(data, date, minimum_rows):
     return filtered
 
 
-def markowitz_rolling(data, date, rolling_size = 100, q = 1500, proportions = None):
+def markowitz_rolling(data, date, rolling_size = 100, q = 1500, tickers=None, proportions = None):
     
     filtered_data = filter_tickers(data, date, rolling_size)
     
-    tickers = list(filtered_data.columns)
+    if (tickers == None):
+        tickers = list(filtered_data.columns)
+    #tickers = list(filtered_data.columns)
     
     n_stocks = 5
     datos = []
     for i in range(q):
         
-        muestra = filtered_data[random.sample(tickers, n_stocks)]
+        muestra = filtered_data[utils.sample_sin_repetir(tickers, n_stocks)]
         
         pond = []
         for ticker in muestra:
@@ -46,7 +49,7 @@ def markowitz_rolling(data, date, rolling_size = 100, q = 1500, proportions = No
                 maximum = proportions[ticker]['max']
             else:
                 minimum = 0.01
-                maximum = 0.6                
+                maximum = 0.6               
             
             pond.append(random.randint(int(minimum * 10000), int(maximum * 10000)) / 10000)
         
@@ -83,7 +86,7 @@ def markowitz_rolling(data, date, rolling_size = 100, q = 1500, proportions = No
             r['sharpe'] = r['retorno'] / r['volatilidad']
             datos.append(r)
             
-    df = pd.DataFrame(datos).sort_values('sharpe', ascending=False)
+    df = pd.DataFrame(datos)#.sort_values('sharpe', ascending=False)
     return df
 
 
@@ -111,62 +114,94 @@ def calc_proportions(df):
     for key in values.keys() :
 
         result[key] = {
-            'min': min(values[key]) ,
-            'max': max(values[key])
+            #'min': max(min(values[key]) * 0.95, 0.01),
+            #'max': min(max(values[key]) * 1.05, 0.5)
+            'min': max(min(values[key]), 0.01),
+            'max': min(max(values[key]), 0.6)
         }
 
+        if (result[key]['max'] < result[key]['min']):
+            result[key]['max'] = result[key]['min']           
+
+    print(result)
 
     return result
+
+def get_activos_pond_sorted(activos, pond):
+    zipped = zip(activos, pond)
+    zipped_list = list(zipped)
+    zipped_list.sort(key=lambda tup: tup[1], reverse=True)
+    zipped_list = list(zip(*zipped_list))
+    
+    activos = list(zipped_list[0])
+    pond = list(zipped_list[1])  
+
+    return activos, pond  
 
 # Corre markowitz hasta que los 5 primeros resultados tienen las mismos 5 tickers en cualquier orden
 # Optimizacion pendiente, que todos los tickers tengan una diferencia de proporcion de menos del 
 # 5% entre la primer y la quinta fila
 def markowitz_while(data, date, rolling_size = 100, q_inicial = 1500):
     
-    #data = data.drop(['USDC' ,'TUSD', 'BUSD', 'USDT', 'DAI', 'PAX'], axis=1)
+    data = data.drop(['USDC' ,'TUSD', 'BUSD', 'USDT', 'DAI', 'PAX'], axis=1, errors='ignore')
     
     best_porfolios = pd.DataFrame()
     
     df_filtrado = data
     
-    i = 0
+    i = 1
     sigue = True
-    
-    default_proportions = {}
-    for ticker in df_filtrado.columns:
-        default_proportions[ticker] = {
-            'min': 0.01,
-            'max': 0.60
-        }
                 
-    proportions = default_proportions       
+    proportions = None       
     
-    while (sigue and (i < 200)): 
-        portfolios = markowitz_rolling(df_filtrado, date, rolling_size=rolling_size, q=q_inicial, proportions=proportions)
-
-        best_porfolios = pd.concat([best_porfolios, portfolios.iloc[:200]])
-        best_porfolios = best_porfolios.sort_values('sharpe', ascending=False).head(200)
+    lista_tickers = None
+    
+    while (sigue and (i <= 20)): 
+        portfolios = markowitz_rolling(df_filtrado, date, tickers=lista_tickers, rolling_size=rolling_size, q=q_inicial, proportions=proportions)
         
-        if i >= 3:
+        cant_rows = int(200/i)
+
+        if (cant_rows < 5):
+            cant_rows = 5
+
+        best_porfolios = pd.concat([best_porfolios, portfolios])
+        best_porfolios = best_porfolios.sort_values('sharpe', ascending=False).head(cant_rows)
+        
+        if i > 3:
             proportions = calc_proportions(best_porfolios)
         
-        top = best_porfolios.iloc[ : int(200/(i+1))]
+        #top = best_porfolios.iloc[ : int(200/(i+1))]
+        #chequear
+        #top = best_porfolios.iloc[ : int(200/(i+1))]
 
-        lista_tickers = list(set(np.array(top.activos.apply(pd.Series).stack())))
+        lista_tickers = list(np.array(best_porfolios.activos.apply(pd.Series).stack()))
+        
+        lista_tickers_set = set(lista_tickers)
 
-        print(len(lista_tickers), end=" - ")
+        print(i, end=" ")
+        print(len(lista_tickers_set), end=" ")
 
-        df_filtrado = data[lista_tickers]
+        df_filtrado = data[lista_tickers_set]
         
         i = i + 1
         
-        zero = sorted(best_porfolios.iloc[0].activos) 
-        one = sorted(best_porfolios.iloc[1].activos)
-        two = sorted(best_porfolios.iloc[2].activos)
-        three = sorted(best_porfolios.iloc[3].activos)        
-        four = sorted(best_porfolios.iloc[4].activos)
+        sigue = False
+
+        rowZero = best_porfolios.iloc[0]
+        activosZero, pondZero = get_activos_pond_sorted(rowZero.activos, rowZero.pesos)
+        j = 1
+        while ((sigue == False) and j < 5):
+            row = best_porfolios.iloc[j]
+            activos, pond = get_activos_pond_sorted(row.activos, row.pesos)
+
+            j = j + 1
+            
+            sigue = sigue or (activos != activosZero) or (np.all(abs((np.array(pondZero) - np.array(pond))) < 0.05) == False)
+            
+        rowFive = best_porfolios.iloc[4] 
+        activosFive, pondFive = get_activos_pond_sorted(rowFive.activos, rowFive.pesos)
         
-        sigue = (zero != one) or (zero != two) or (zero != three) or (zero != four)
+        print(max(abs((np.array(pondZero) - np.array(pondFive)))))
         
     return best_porfolios
 

@@ -1,6 +1,7 @@
-import pandas as pd
 import os
+import random
 import datetime as dt
+import pandas as pd
 
 def is_older_than(filename, days):
     time = os.path.getmtime('./files/' + filename + '.h5') 
@@ -14,15 +15,23 @@ def file_exists(filename):
 
 def save(filename, data):
     
-    store = pd.HDFStore('./files/' + filename + '.h5')
-    
-    store['data'] = data
-    
+    data.to_hdf('./files/' + filename + '.h5', 'data')    
+    data.to_csv('./files/' + filename + '.csv')
+    data.to_excel('./files/' + filename + '.xlsx')
+        
     return data
         
 def open(filename):
-    store = pd.HDFStore('./files/' + filename + '.h5')
-    
-    data = store['data']
-    
+    data = pd.read_hdf('./files/' + filename + '.h5')
+        
     return pd.DataFrame(data)
+
+
+def sample_sin_repetir(list, k):
+    result= []
+    while len(result) < k:
+        item = random.choice(list)
+        if item not in result:
+            result.append(item)
+    
+    return result
