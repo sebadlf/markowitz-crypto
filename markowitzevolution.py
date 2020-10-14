@@ -28,15 +28,23 @@ def filter_tickers(data, date, minimum_rows):
     return filtered
 
 
-def markowitz_rolling(data, date, rolling_size = 100, q = 1500, tickers=None, proportions = None):
-    
+def markowitz_rolling(data, date, rolling_size = 100, q = 1500, tickers=None, proportions = None,n_stocks = 5):
+    '''
+
+    Returns
+    -------
+
+    Las primeras 3 corridas, toma la totalidad de los tickes en igualdad de condiciones.
+    En la 4, comienza a ponderar los mejores
+        
+    '''
     filtered_data = filter_tickers(data, date, rolling_size)
     
     if (tickers == None):
         tickers = list(filtered_data.columns)
     #tickers = list(filtered_data.columns)
     
-    n_stocks = 5
+    
     datos = []
     for i in range(q):
         
@@ -141,8 +149,15 @@ def get_activos_pond_sorted(activos, pond):
 # Corre markowitz hasta que los 5 primeros resultados tienen las mismos 5 tickers en cualquier orden
 # Optimizacion pendiente, que todos los tickers tengan una diferencia de proporcion de menos del 
 # 5% entre la primer y la quinta fila
-def markowitz_while(data, date, rolling_size = 100, q_inicial = 1500):
-    
+def markowitz_while(data, date, rolling_size = 100, q_inicial = 1500,n_stocks = 5):
+    '''
+
+    Returns
+    -------
+    best_porfolios : TYPE
+        Conjunto de los mejores portafolios con una fecha y un Rolling.
+        
+    '''
     data = data.drop(['USDC' ,'TUSD', 'BUSD', 'USDT', 'DAI', 'PAX'], axis=1, errors='ignore')
     
     best_porfolios = pd.DataFrame()
@@ -157,7 +172,7 @@ def markowitz_while(data, date, rolling_size = 100, q_inicial = 1500):
     lista_tickers = None
     
     while (sigue and (i <= 20)): 
-        portfolios = markowitz_rolling(df_filtrado, date, tickers=lista_tickers, rolling_size=rolling_size, q=q_inicial, proportions=proportions)
+        portfolios = markowitz_rolling(df_filtrado, date, tickers=lista_tickers, rolling_size=rolling_size, q=q_inicial, proportions=proportions, n_stocks = 5)
         
         cant_rows = int(200/i)
 
@@ -190,17 +205,22 @@ def markowitz_while(data, date, rolling_size = 100, q_inicial = 1500):
         rowZero = best_porfolios.iloc[0]
         activosZero, pondZero = get_activos_pond_sorted(rowZero.activos, rowZero.pesos)
         j = 1
+        
         while ((sigue == False) and j < 5):
             row = best_porfolios.iloc[j]
             activos, pond = get_activos_pond_sorted(row.activos, row.pesos)
 
             j = j + 1
-            
+
+            # el while siempre continua, si los 5 activos, mantienen el mismo orden 
+            # y tienen una diferencia mayor al 5%    
             sigue = sigue or (activos != activosZero) or (np.all(abs((np.array(pondZero) - np.array(pond))) < 0.05) == False)
             
         rowFive = best_porfolios.iloc[4] 
         activosFive, pondFive = get_activos_pond_sorted(rowFive.activos, rowFive.pesos)
-        
+        # Rueda
+        # Elementos analizados.
+        # Max Valor absoluto entre la ponderacion de la fila 0 y 5
         print(max(abs((np.array(pondZero) - np.array(pondFive)))))
         
     return best_porfolios
@@ -208,6 +228,13 @@ def markowitz_while(data, date, rolling_size = 100, q_inicial = 1500):
 # Devuelve un DataFrame con "count" filas con una diferencia de "step" dias empezando con el dia de hoy
 # DISCLAMER: Cada fila del DataFrame tarda aproximadamente dos minutos en ser calculara. 
 def markowitz_evolution(data, step=7, count = 5, rolling_size = 100, q_inicial = 1500):
+    '''
+
+    Returns
+    -------
+        un Dataframe con la mejor evolucion del rolling.
+        
+    '''
     best_mark = []
     indexes = list(data.index.values)
     for i in tqdm.tqdm(range(count)):
