@@ -5,6 +5,7 @@ files/
 .DS_STORE
 .settings
 .vscode/
+.idea/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
