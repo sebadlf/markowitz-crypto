@@ -35,6 +35,9 @@ for i in indexes:
     mark_row = list(zip(row.activos, pesos_ajustados))
     for activo in mark_row:
         ticker = activo[0]
+        
+        ticker = ticker.split('_')[0]
+        
         value = activo[1]
 
         cumprod = cumprod - value

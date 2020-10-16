@@ -48,7 +48,8 @@ def markowitz_rolling(data, date, rolling_size = 100, q = 1500, tickers=None, pr
     datos = []
     for i in range(q):
         
-        muestra = filtered_data[utils.sample_sin_repetir(tickers, n_stocks)]
+        lista_tickers = utils.sample_sin_repetir(tickers, n_stocks)
+        muestra = filtered_data[lista_tickers]
         
         pond = []
         for ticker in muestra:
@@ -65,27 +66,18 @@ def markowitz_rolling(data, date, rolling_size = 100, q = 1500, tickers=None, pr
         pond = pond/np.sum(pond)
                 
         # Filtro sin ceros
-        muestra = muestra.loc[:, (muestra != 0).all(axis=0)]
-        retornos = np.log((muestra/muestra.shift(1)).dropna())
-        #pond = np.array(np.random.random(len(muestra.columns)))
-        
+        #muestra = muestra.loc[:, (muestra != 0).all(axis=0)]
+        #retornos = np.log((muestra/muestra.shift(1)).dropna())
+        retornos = muestra.dropna()
+
         activos = list(muestra.columns)
-        
-        # Ordeno los activos por ponderacion
-#         activos = list(muestra.columns)
-#         pond = pond.round(3)
-        
-#         zipped = zip(activos, pond)
-#         zipped_list = list(zipped)
-#         zipped_list.sort(key=lambda tup: tup[1], reverse=True)
-#         zipped_list = list(zip(*zipped_list))
-        
-#         activos = list(zipped_list[0])
-#         pond = list(zipped_list[1])
-        #fin de ordenamiento
 
         # If para evitar activos sin dataFeed
-        if len(retornos):    
+        if len(retornos):   
+            #print(lista_tickers)
+            #print(retornos)
+            #print(np.sqrt(np.dot(pond, np.dot(retornos.cov()*252, pond))))
+            
             r={}
             r['activos'] = activos
             r['pesos'] = np.round(pond, 3)
