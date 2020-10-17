@@ -113,5 +113,6 @@ def agrego_indicadores(data):
         estrategia1=cruce_medias(data, ticker)
         estrategia2=rsi(data,ticker)
         frame=[retornos,estrategia1,estrategia2] 
-        retornos=pd.concat(frame)
+        retornos=pd.concat(frame,axis=1)
+#        retornos=pd.concat(retornos,estrategia1,estrategia2)
     return retornos 
