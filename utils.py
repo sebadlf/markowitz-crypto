@@ -37,7 +37,7 @@ def sample_sin_repetir(list, k):
     
     return result
 
-def get_operaciones(data):
+def get_operaciones_long(data):
     df = data.copy()
 
     # Una sola entrada y salida por vez
@@ -62,43 +62,56 @@ def get_operaciones(data):
     
     return operaciones
 
-def agrego_indicadores(prices):
-    retornos = np.log((prices/prices.shift(1)))
 
-    for ticker in prices.columns:
-        sma_5 = prices[ticker].rolling(5).mean()
-        sma_10 = prices[ticker].rolling(10).mean()
+
+def cruce_medias(data,ticker,rapida=5,lenta=10):
+    '''
+    En todo momento que la media movil RAPIDA este sobre la LENTA, estoy comprado.
+    '''
+    retornos = pd.DataFrame(np.log((data[ticker]/data[ticker].shift(1))))
+    sma_rapida = data[ticker].rolling(rapida).mean()
+    sma_lenta = data[ticker].rolling(lenta).mean()
+    comprado = (sma_rapida / sma_lenta) >= 1
+    retornos['estoyComprado'] = comprado
+    retornos[ticker+'_sma'] = np.where(retornos.estoyComprado, retornos[ticker], 0)
+    retornos = retornos.drop(['estoyComprado'], axis=1) 
+    return retornos	
+
+def rsi(data,ticker,rsi_q=9):
+    '''
+    Si el RSI es menor a 30 compramos y vendemos cuando llega a 70.
+	'''
+    retornos = pd.DataFrame(np.log((data[ticker]/data[ticker].shift(1))))
+    dif = data[ticker].diff()
+    win =  pd.DataFrame(np.where(dif > 0, dif, 0))
+    loss = pd.DataFrame(np.where(dif < 0, abs(dif), 0))
+    ema_win = win.ewm(alpha=1/rsi_q).mean()
+    ema_loss = loss.ewm(alpha=1/rsi_q).mean()
+    rs = ema_win / ema_loss
+    rsi = 100 - (100 / (1+rs))
+    rsi.index = retornos.index
+    retornos['rsi'] = rsi    
+    retornos['signal'] = np.where(retornos.rsi < 30, 'buy', np.where(retornos.rsi > 70, 'sell', 'hold'))
+    operaciones = get_operaciones_long(retornos)
+    retornos['estoyComprado'] = False
+    for i in range(len(operaciones)):
+        op = operaciones.iloc[i]
+        retornos['estoyComprado'] = np.where((retornos.index >= op.fecha_compra) & (retornos.index <= op.fecha_venta), True, False)
     
-        comprado = (sma_5 / sma_10) >= 1
-        
-        retornos['estoyComprado'] = comprado
-        
-        retornos[ticker+'_sma'] = np.where(retornos.estoyComprado, retornos[ticker], 0)    
-        
-        rsi_q = 9
-        
-        dif = prices[ticker].diff()
-        win =  pd.DataFrame(np.where(dif > 0, dif, 0))
-        loss = pd.DataFrame(np.where(dif < 0, abs(dif), 0))
-        ema_win = win.ewm(alpha=1/rsi_q).mean()
-        ema_loss = loss.ewm(alpha=1/rsi_q).mean()
-        rs = ema_win / ema_loss
-        rsi = 100 - (100 / (1+rs))
-        rsi.index = retornos.index
-        retornos['rsi'] = rsi   
-        
-        retornos['signal'] = np.where(retornos.rsi < 30, 'buy', np.where(retornos.rsi > 70, 'sell', 'hold'))
-        
-        operaciones = get_operaciones(retornos)
-        
-        retornos['estoyComprado'] = False
-        
-        for i in range(len(operaciones)):
-            op = operaciones.iloc[i]
-            retornos['estoyComprado'] = np.where((retornos.index >= op.fecha_compra) & (retornos.index <= op.fecha_venta), True, False)
-        
-        retornos[ticker+'_rsi'] = np.where(retornos.estoyComprado, retornos[ticker], 0) 
+    retornos[ticker+'_rsi'] = np.where(retornos.estoyComprado, retornos[ticker], 0)
+    retornos = retornos.drop(['estoyComprado', 'rsi', 'signal'], axis=1)
+    return retornos	
+
+
+
+
+def agrego_indicadores(data):
     
-    retornos = retornos.drop(['estoyComprado', 'rsi', 'signal'], axis=1)    
-    
+    tickers=data.columns
+    retornos=pd.DataFrame()
+    for ticker in tickers:
+        estrategia1=cruce_medias(data, ticker)
+        estrategia2=rsi(data,ticker)
+        frame=[retornos,estrategia1,estrategia2] 
+        retornos=pd.concat(frame)
     return retornos 
