@@ -37,6 +37,11 @@ def sample_sin_repetir(list, k):
     
     return result
 
+def get_retorno_log(data,ticker):
+    """ Recibe un df y entrega el mismo df con el retorn logaritmico """
+    resultado = pd.DataFrame(np.log((data[ticker] / data[ticker].shift(1))))
+    return resultado
+
 def get_operaciones_long(data):
     df = data.copy()
 
@@ -64,24 +69,24 @@ def get_operaciones_long(data):
 
 
 
-def cruce_medias(data,ticker,rapida=5,lenta=10):
+def cruce_medias(data,ticker,retornoLog,rapida=5,lenta=10):
     '''
     En todo momento que la media movil RAPIDA este sobre la LENTA, estoy comprado.
     '''
-    retornos = pd.DataFrame(np.log((data[ticker]/data[ticker].shift(1))))
+    retornos = retornoLog.copy()
     sma_rapida = data[ticker].rolling(rapida).mean()
     sma_lenta = data[ticker].rolling(lenta).mean()
     comprado = (sma_rapida / sma_lenta) >= 1
     retornos['estoyComprado'] = comprado
     retornos[ticker+'_sma'] = np.where(retornos.estoyComprado, retornos[ticker], 0)
-    retornos = retornos.drop(['estoyComprado',f'{ticker}'], axis=1) 
+    retornos = retornos.drop([ticker,'estoyComprado'], axis=1)
     return retornos	
 
-def rsi(data,ticker,rsi_q=9):
+def rsi(data,ticker,retornoLog,rsi_q=9):
     '''
     Si el RSI es menor a 30 compramos y vendemos cuando llega a 70.
 	'''
-    retornos = pd.DataFrame(np.log((data[ticker]/data[ticker].shift(1))))
+    retornos = retornoLog.copy()
     dif = data[ticker].diff()
     win =  pd.DataFrame(np.where(dif > 0, dif, 0))
     loss = pd.DataFrame(np.where(dif < 0, abs(dif), 0))
@@ -99,7 +104,7 @@ def rsi(data,ticker,rsi_q=9):
         retornos['estoyComprado'] = np.where((retornos.index >= op.fecha_compra) & (retornos.index <= op.fecha_venta), True, False)
     
     retornos[ticker+'_rsi'] = np.where(retornos.estoyComprado, retornos[ticker], 0)
-    retornos = retornos.drop(['estoyComprado', 'rsi', 'signal',f'{ticker}'], axis=1)
+    retornos = retornos.drop([ticker,'estoyComprado', 'rsi', 'signal'], axis=1)
     return retornos	
 
 
@@ -110,10 +115,9 @@ def agrego_indicadores(data):
     tickers=data.columns
     retornos=pd.DataFrame()
     for ticker in tickers:
-        estrategia0=pd.DataFrame(np.log((data[ticker]/data[ticker].shift(1))))
-        estrategia1=cruce_medias(data, ticker)
-        estrategia2=rsi(data,ticker)
-        frame=[retornos,estrategia0,estrategia1,estrategia2] 
+        retornoLog=get_retorno_log(data,ticker)
+        estrategia1=cruce_medias(data,ticker,retornoLog)
+        estrategia2=rsi(data,ticker,retornoLog)
+        frame=[retornos,retornoLog,estrategia1,estrategia2]
         retornos=pd.concat(frame,axis=1)
-#        retornos=pd.concat(retornos,estrategia1,estrategia2)
-    return retornos 
+    return retornos

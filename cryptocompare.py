@@ -33,7 +33,7 @@ def DailySymbolVolSingleExchange(fsym='BTC',tsym='USD',limit=30):
     return total
 
    
-def histoDay(e,fsym,tsym,toTs=None,limit = 2000, aggregate=1, allData='true'):
+def histoDay(e,fsym,tsym,limit,toTs=None, aggregate=1, allData='false'):
     url = 'https://min-api.cryptocompare.com/data/v2/histoday'
     api_key = CRYPTOCOMPARE_KEY
     params = {'api_key': api_key, 'e': e, 'fsym': fsym, 'tsym': tsym, 'allData': allData, 'toTs': toTs, 'limit': limit, 'aggregate': aggregate}
@@ -43,17 +43,18 @@ def histoDay(e,fsym,tsym,toTs=None,limit = 2000, aggregate=1, allData='true'):
     df.time = pd.to_datetime(df.time, unit = 's')
     df = df.set_index('time').drop(['conversionType','conversionSymbol'],axis=1)
     df = df[(df.T != 0).any()]
+    df = df.dropna()
     df = df.reset_index()
-    df = df[df['time'].dt.year>2016]    
+    #df = df[df['time'].dt.year>2016]
     return df
 
 
 
-def mutiple_close_prices(tickers):
+def mutiple_close_prices(tickers,limit):
     tablas = {}
     for ticker in tqdm.tqdm(tickers):                
         try:
-            data = histoDay('CCCAGG',ticker,'USD')
+            data = histoDay('CCCAGG',ticker,'USD',limit=limit)
             data = data.set_index('time')
             tablas[ticker] = data.drop(['open','high','low','volumefrom','volumeto'],axis=1)
         except:
@@ -67,11 +68,11 @@ def mutiple_close_prices(tickers):
     tabla.columns = tickers
     return tabla
 
-def get_mutiple_close_prices(tickers, cache_days = 1):
-    if (utils.file_exists('prices') and (utils.is_older_than('prices', cache_days) == False)):
+def get_mutiple_close_prices(tickers, cache_days = 1,limit=365):
+    if (utils.file_exists('prices') and (utils.is_older_than('prices', cache_days) == False)) and 1==False:
         top = utils.open('prices')
     else:
-        top = mutiple_close_prices(tickers)
+        top = mutiple_close_prices(tickers,limit=limit)
         utils.save('prices', top)    
         
     return top
