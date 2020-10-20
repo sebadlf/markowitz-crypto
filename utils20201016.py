@@ -74,7 +74,7 @@ def cruce_medias(data,ticker,rapida=5,lenta=10):
     comprado = (sma_rapida / sma_lenta) >= 1
     retornos['estoyComprado'] = comprado
     retornos[ticker+'_sma'] = np.where(retornos.estoyComprado, retornos[ticker], 0)
-    retornos = retornos.drop(['estoyComprado',f'{ticker}'], axis=1) 
+    retornos = retornos.drop(['estoyComprado'], axis=1) 
     return retornos	
 
 def rsi(data,ticker,rsi_q=9):
@@ -99,7 +99,7 @@ def rsi(data,ticker,rsi_q=9):
         retornos['estoyComprado'] = np.where((retornos.index >= op.fecha_compra) & (retornos.index <= op.fecha_venta), True, False)
     
     retornos[ticker+'_rsi'] = np.where(retornos.estoyComprado, retornos[ticker], 0)
-    retornos = retornos.drop(['estoyComprado', 'rsi', 'signal',f'{ticker}'], axis=1)
+    retornos = retornos.drop(['estoyComprado', 'rsi', 'signal'], axis=1)
     return retornos	
 
 
@@ -110,10 +110,8 @@ def agrego_indicadores(data):
     tickers=data.columns
     retornos=pd.DataFrame()
     for ticker in tickers:
-        estrategia0=pd.DataFrame(np.log((data[ticker]/data[ticker].shift(1))))
         estrategia1=cruce_medias(data, ticker)
         estrategia2=rsi(data,ticker)
-        frame=[retornos,estrategia0,estrategia1,estrategia2] 
-        retornos=pd.concat(frame,axis=1)
-#        retornos=pd.concat(retornos,estrategia1,estrategia2)
+        frame=[retornos,estrategia1,estrategia2] 
+        retornos=pd.concat(frame)
     return retornos 
