@@ -12,12 +12,15 @@ import markowitzevolution
 import utils20201016
 import numpy as np
 import pandas as pd
+import binance
 
-# Obtiene el top 50 de tickers ordenados por volumen
-
+# Obtiene el top 50 de tickers ordenados por volumen de CRYPTOCOMPARE
 #top = cryptocompare.get_top_tickers(50, cache_days=30)
-
 #tickers = top.ticker
+
+# Obtiene el top de tickers de BINANCE y luego filtra por volumen (top 75 por default)
+#top = binance.listaTickers(nombre="tickersBinance", numeroTickers=75)
+#tickers = list(top.tickers)
 
 # lo uso para hacer pruebas post seleccion de tickers.
 #tickers = utils.open('top-tickers')
@@ -27,8 +30,8 @@ import pandas as pd
 # prices = cryptocompare.get_mutiple_close_prices(tickers, cache_days= 1)
 
 # lo uso para hacer pruebas post adquisicion de precios.
-prices = utils20201016.open('prices')
-estrategias=utils20201016.agrego_indicadores(data=prices)
+#prices = utils20201016.open('prices')
+#estrategias=utils20201016.agrego_indicadores(data=prices)
 
                                    
 
