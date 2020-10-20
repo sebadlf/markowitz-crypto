@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import binance
 
+
 # Obtiene el top 50 de tickers ordenados por volumen de CRYPTOCOMPARE
 #top = cryptocompare.get_top_tickers(50, cache_days=30)
 #tickers = top.ticker
@@ -23,15 +24,17 @@ import binance
 #tickers = list(top.tickers)
 
 # lo uso para hacer pruebas post seleccion de tickers.
-#tickers = utils.open('top-tickers')
+#tickers = utils20201016.open('tickersBinance')
+#tickers = list(tickers["tickers"])
 
 
 # Obtiene el historico de precios de los tickers pasados como parametros
-# prices = cryptocompare.get_mutiple_close_prices(tickers, cache_days= 1)
+#prices = cryptocompare.get_mutiple_close_prices(tickers, cache_days= 1,limit=365)
 
 # lo uso para hacer pruebas post adquisicion de precios.
 #prices = utils20201016.open('prices')
 #estrategias=utils20201016.agrego_indicadores(data=prices)
+#utils20201016.save("estrategias1",estrategias)
 
                                    
 
