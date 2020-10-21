@@ -4,70 +4,6 @@ import datetime as dt
 import pandas as pd
 import numpy as np
 
-##### Conversion de Fechas ######
-def conviertoFecha(fecha_str):
-    ''' La funcion acepta (dd-mm-YYYY) o (dd-mm-YYYY H) o (dd-mm-YYYY H:M) o (dd-mm-YYYY H:M:S) o (dd-mm-YYYY H:M:S:mS)'''
-
-    try:
-        fecha=dt.datetime.strptime(fecha_str,'%d-%m-%Y')
-    except:
-        try:
-            fecha=dt.datetime.strptime(fecha_str,'%d-%m-%Y %H')
-        except:
-            try:
-                fecha=dt.datetime.strptime(fecha_str,'%d-%m-%Y %H:%M')
-            except:
-                try:
-                    fecha=dt.datetime.strptime(fecha_str,'%d-%m-%Y %H:%M:%S')
-                except:
-                    try:
-                         fecha=dt.datetime.strptime(fecha_str,'%d-%m-%Y %H:%M:%S.%f')   
-                    except:
-                        print('El formato de fecha es incorrecto')
-                        print('\n')
-                        help(conviertoFecha)
-                        fecha=dt.datetime(1,1,1)
-#                        fechaControl=False
-                        
-    return fecha
-
-#Binance utiliza Ms.
-def conviertoFechaMs(fecha):
-    '''Convierto la fecha a Milisegundos'''
-    if(type(fecha)!=dt.datetime):
-        fechadt=conviertoFecha(fecha)
-    else:
-        fechadt=fecha
-    
-    dev=int(fechadt.timestamp()*1000)
-    return dev
-
-
-def conviertoFechaMsaFecha(fechaMs):
-        import time as tm
-        fecha=tm.localtime(fechaMs/1000)
-        dev = dt.datetime.fromtimestamp(tm.mktime(fecha))
-        return dev
-
-#Cryptocompare utiliza Segundos.
-def conviertoFechaS(fecha):
-    '''Convierto la fecha a Milisegundos'''
-    if(type(fecha)!=dt.datetime):
-        fechadt=conviertoFecha(fecha)
-    else:
-        fechadt=fecha
-    
-    dev=int(fechadt.timestamp())
-    return dev
-
-def conviertoFechaSaFecha(fechaMs):
-        import time as tm
-        fecha=tm.localtime(fechaMs)
-        dev = dt.datetime.fromtimestamp(tm.mktime(fecha))
-        return dev
-    
-##### Fin Conversion de Fechas ######
-
 def is_older_than(filename, days):
     time = os.path.getmtime('./files/' + filename + '.h5') 
     fecha_modificacion = dt.datetime.fromtimestamp(time) 
@@ -101,30 +37,76 @@ def sample_sin_repetir(list, k):
     
     return result
 
-def get_operaciones_long(data):
+def get_operaciones_long(trades):
+    
+    try:
+        # Supuesto estrategia long, debe empezar con compra y terminar con venta
+        if trades.iloc[0]['signal'] =='sell':
+            trades = trades.iloc[1:]
+    
+        if trades.iloc[-1]['signal']=='buy':
+            trades = trades.iloc[:-1]
+    
+    except:
+        pass
+    
+    return trades
+
+def get_operaciones_short(trades):
+    
+    try:
+        # Supuesto estrategia short, debe empezar con compra y terminar con venta
+        if trades.iloc[0]['signal'] =='buy':
+            trades = trades.iloc[1:]
+    
+        if trades.iloc[-1]['signal']=='sell':
+            trades = trades.iloc[:-1]
+    except:
+        pass
+    
+    return trades
+
+def registro_trades(trades):
+    '''
+
+    Parameters
+    ----------
+    trades : DF
+        Contiene las operaciones de compra (buy) y venta (sell).
+
+    Returns
+    -------
+    operaciones : DF
+        Parejas de operaciones.
+
+    '''
+    fechas_Inicio = trades.iloc[::2].index
+    fechas_Fin = trades.iloc[1::2].index
+    
+    operaciones = (fechas_Inicio).to_frame()
+    operaciones['fecha_Fin'] = fechas_Fin
+    
+    operaciones.columns = ['Fecha_Inicio', 'Fecha_Fin']
+    return operaciones
+
+def get_operaciones(data,tipo='long'):
     df = data.copy()
 
     # Una sola entrada y salida por vez
     trades = df.loc[df.signal != 'hold'].copy()
     trades['signal'] = np.where(trades.signal != trades.signal.shift(), trades.signal, 'hold')
-    trades = trades.loc[trades.signal != 'hold'].copy()
-    
-    # Supuesto estrategia long, debe empezar con compra y terminar con venta
-    if trades.iloc[0]['signal'] =='sell':
-        trades = trades.iloc[1:]
-
-    if trades.iloc[-1]['signal']=='buy':
-        trades = trades.iloc[:-1]
-
-    fechas_compra = trades.iloc[::2].index
-    fechas_venta = trades.iloc[1::2].index
-
-    operaciones = (fechas_compra).to_frame()
-    operaciones['fecha_venta'] = fechas_venta
-    
-    operaciones.columns = ['fecha_compra', 'fecha_venta']
-    
+    trades = trades.loc[trades.signal != 'hold'].copy() 
+    if (tipo=='long'):
+        trades_ordenados=get_operaciones_long(trades)
+        if (tipo=='short'):
+            trades_ordenados=get_operaciones_short(trades)
+        else:
+            pass
+            
+    operaciones=registro_trades(trades_ordenados)
     return operaciones
+
+
 
 
 
@@ -156,11 +138,11 @@ def rsi(data,ticker,rsi_q=9):
     rsi.index = retornos.index
     retornos['rsi'] = rsi    
     retornos['signal'] = np.where(retornos.rsi < 30, 'buy', np.where(retornos.rsi > 70, 'sell', 'hold'))
-    operaciones = get_operaciones_long(retornos)
+    operaciones = get_operaciones(retornos)
     retornos['estoyComprado'] = False
     for i in range(len(operaciones)):
         op = operaciones.iloc[i]
-        retornos['estoyComprado'] = np.where((retornos.index >= op.fecha_compra) & (retornos.index <= op.fecha_venta), True, False)
+        retornos['estoyComprado'] = np.where((retornos.index >= op.Fecha_Inicio) & (retornos.index <= op.Fecha_Fin), True, False)
     
     retornos[ticker+'_rsi'] = np.where(retornos.estoyComprado, retornos[ticker], 0)
     retornos = retornos.drop(['estoyComprado', 'rsi', 'signal',f'{ticker}'], axis=1)
