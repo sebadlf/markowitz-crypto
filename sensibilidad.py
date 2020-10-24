@@ -55,10 +55,10 @@ def get_trades(data):
     trades = trades.loc[trades.signal != 'hold'].copy()
 
     # Supuesto estrategia long, debe empezar con compra y terminar con venta
-    if (len(trades) > 1) and (trades.iloc[0]['signal'] == 'sell'):
+    if (len(trades) >= 1) and (trades.iloc[0]['signal'] == 'sell'):
         trades = trades.iloc[1:]
 
-    if (len(trades) > 1) and (trades.iloc[-1]['signal'] == 'buy'):
+    if (len(trades) >= 1) and (trades.iloc[-1]['signal'] == 'buy'):
         trades = trades.iloc[:-1]
 
     return trades
@@ -93,7 +93,7 @@ def get_yields(trades):
 
 
 def get_result(yields):
-    resultado = float((yields.iloc[-1:].yield_cum - 1) * 100)
+    resultado = float((yields.iloc[-1:].yield_cum - 1) * 100) if len(yields) > 0 else 0
     return resultado
 
 def get_analytics(yields):
@@ -101,16 +101,26 @@ def get_analytics(yields):
     avg_yield = yields.groupby('ok').mean()['yield']
     days = yields.groupby('ok').sum()['days']
 
+    counts_true = counts.get(True) or 0
+    counts_false = counts.get(False) or 0
+
+    avg_yield_true = avg_yield.get(True) or 0
+    avg_yield_false = avg_yield.get(False) or 0
+
+    days_true = days.get(True) or 0
+    days_false = days.get(False) or 0
+
+
     result = {
         'result': get_result(yields),
-        'count_ok': counts[True],
-        'count_fail': counts[False],
-        'avg_yield_ok': avg_yield[True],
-        'avg_yield_fail': avg_yield[False],
-        'days_ok': days[True],
-        'days_fail': days[False],
-        'math_hope': counts[True] * avg_yield[True] + counts[False] * avg_yield[False],
-        'time_bougth_ok': days[True] / (days[True] + days[False])
+        'count_ok': counts_true,
+        'count_fail': counts_false,
+        'avg_yield_ok': avg_yield_true,
+        'avg_yield_fail': avg_yield_false,
+        'days_ok': days_true,
+        'days_fail': days_false,
+        'math_hope': counts_true * avg_yield_true + counts_false * avg_yield_false,
+        'time_bougth_ok': days_false / (days_true + days_false) if days_true else -1
     }
 
     return result
@@ -131,16 +141,19 @@ def get_sensitivity(data_serie, add_signals, get_params, cicles=1000):
         trades = get_trades(local_data)
         yields = get_yields(trades)
 
-        try:
-            analytics = get_analytics(yields)
-            res = {**params, **analytics}
-            results.append(res)
-        except:
-            pass
+        #try:
+        analytics = get_analytics(yields)
+        res = {**params, **analytics}
+        results.append(res)
+        #except:
+        #    pass
 
     df = pd.DataFrame(results)
 
-    return df.sort_values(by="result", ascending=False)
+    if len(df) > 0:
+        df = df.sort_values(by="result", ascending=False)
+
+    return df
 
 def add_sma(data, span, alias=''):
     if (len(alias) == 0):

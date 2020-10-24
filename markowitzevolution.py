@@ -150,7 +150,7 @@ def markowitz_while(data, date, rolling_size = 100, q_inicial = 1500,n_stocks = 
         Conjunto de los mejores portafolios con una fecha y un Rolling.
         
     '''
-    data = data.drop(['USDC' ,'TUSD', 'BUSD', 'USDT', 'DAI', 'PAX'], axis=1, errors='ignore')
+    # data = data.drop(['USDC' ,'TUSD', 'BUSD', 'USDT', 'DAI', 'PAX'], axis=1, errors='ignore')
     
     best_porfolios = pd.DataFrame()
     
@@ -252,5 +252,7 @@ def markowitz_evolution(data, step=7, count = 5, rolling_size = 100, q_inicial =
         #fin de ordenamiento        
 
         best_mark.append(best_row)
+
+        utils.save('mark', pd.DataFrame(best_mark))
 
     return pd.DataFrame(best_mark)

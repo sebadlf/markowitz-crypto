@@ -18,9 +18,11 @@ for i in indexes:
     row_prices = prices.loc[prices.index == row.date]
 
     #Vendo
-    for ticker in cartera.keys():
+    for ticker_con_estrategia in cartera.keys():
+        ticker = ticker_con_estrategia.split('_')[0]
+
         ticker_price = float(row_prices[ticker])
-        cumprod = cumprod + (cartera[ticker] * ticker_price)
+        cumprod = cumprod + (cartera[ticker_con_estrategia] * ticker_price)
 
     cumprod_acc.append({
         'date': row.date,
@@ -44,18 +46,20 @@ for i in indexes:
 
         ticker_price = float(row_prices[ticker])
 
-        cartera[ticker] = value / ticker_price
+        cartera[activo[0]] = value / ticker_price
         
 #Vendo
 
 print(cartera)
 
 row = data.iloc[0]
-row_prices = prices.loc[prices.index == row.date]        
-        
-for ticker in cartera.keys():
+row_prices = prices.loc[prices.index == row.date]
+
+for ticker_con_estrategia in cartera.keys():
+    ticker = ticker_con_estrategia.split('_')[0]
+
     ticker_price = float(row_prices[ticker])
-    cumprod = cumprod + (cartera[ticker] * ticker_price)
+    cumprod = cumprod + (cartera[ticker_con_estrategia] * ticker_price)
     
 cartera={}
 
