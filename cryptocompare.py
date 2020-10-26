@@ -225,7 +225,7 @@ def mutiple_close_prices(tickers,limit):
     return tabla
 
 def get_mutiple_close_prices(tickers, cache_days = 1,limit=365):
-    if (utils.file_exists('prices') and (utils.is_older_than('prices', cache_days) == False)) and 1==False:
+    if (utils.file_exists('prices') and (utils.is_older_than('prices', cache_days) == False)):
         top = utils.open('prices')
     else:
         top = mutiple_close_prices(tickers,limit=limit)
