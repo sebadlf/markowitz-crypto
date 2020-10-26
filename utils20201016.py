@@ -120,4 +120,5 @@ def agrego_indicadores(data):
         estrategia2=rsi(data,ticker,retornoLog)
         frame=[retornos,retornoLog,estrategia1,estrategia2]
         retornos=pd.concat(frame,axis=1)
+        retornos = retornos.dropna()
     return retornos
