@@ -22,7 +22,7 @@ def get_retornos_sma_optimo(ticker, prices, retornos):
     data.columns = ['Close']
     data['retornos'] = retornos
 
-    data_sma = sensibilidad.get_sensitivity(prices, sensibilidad.add_signals_sma, sensibilidad.get_params_sma, cicles=200)
+    data_sma = sensibilidad.get_sensitivity(prices, sensibilidad.add_signals_sma, sensibilidad.get_params_sma, cicles=50)
 
     row0_sma = data_sma.iloc[0]
     sma_params = {
@@ -58,7 +58,7 @@ def get_retornos_rsi_optimo(ticker, prices, retornos):
     data.columns = ['Close']
     data['retornos'] = retornos
 
-    data_rsi = sensibilidad.get_sensitivity(prices, sensibilidad.add_signals_rsi, sensibilidad.get_params_rsi, cicles=200)
+    data_rsi = sensibilidad.get_sensitivity(prices, sensibilidad.add_signals_rsi, sensibilidad.get_params_rsi, cicles=50)
 
     if len(data_rsi > 0):
         row0_rsi = data_rsi.iloc[0]
@@ -91,10 +91,12 @@ def get_retornos_rsi_optimo(ticker, prices, retornos):
 
     return data.result
 
-def agrego_indicadores(prices):
+def agrego_indicadores(prices):    
     retornos = np.log((prices / prices.shift(1)))
 
     result = pd.DataFrame(index=retornos.index)
+    
+    print(retornos)
 
     for ticker in list(prices.columns):
         print(ticker)
@@ -114,25 +116,28 @@ def agrego_indicadores(prices):
         except:
             print("Error en " + ticker + '_rsi' )
 
-    return result.dropna()
+    return result
 
 
 # Obtiene el top 50 de tickers ordenados por volumen
-top = cryptocompare.get_top_tickers(50, cache_days=30)
-
-tickers = top.ticker
+# top = cryptocompare.get_top_tickers(50, cache_days=30)
+#
+# tickers = top.ticker
 
 # Obtiene el historico de precios de los tickers pasados como parametros
-prices = cryptocompare.get_mutiple_close_prices(tickers, cache_days=0, limit=500)
+# prices = cryptocompare.get_mutiple_close_prices(tickers, cache_days=1, limit=500)
 
-prices = prices.drop(['USDC' ,'TUSD', 'BUSD', 'USDT', 'DAI', 'PAX'], axis=1, errors='ignore')
+prices = utils.open('prices')
+#
+prices = prices.drop(['BTC',  'USDC' ,'TUSD', 'BUSD', 'USDT', 'DAI', 'PAX'], axis=1, errors='ignore')
 
-#prices = utils.open('prices')
-
-#columns = prices.columns[:10]
-#columns = ['USDC', 'BSV']
+# columns = prices.columns[:10]
+##columns = ['USDC', 'BSV']
 
 #prices = prices[columns]
+
+#sprices.set_index("time", inplace=True)
+#prices.drop("index", axis=1 ,inplace=True)
 
 retornos = agrego_indicadores(prices)
 
@@ -143,7 +148,7 @@ utils.save('best_rsi', pd.DataFrame(best_rsi))
 
 #retornos = utils.open('retornos')
 
-evolution = markowitzevolution.markowitz_evolution(retornos, step=7, count=52, q_inicial=100)
+evolution = markowitzevolution.markowitz_evolution(retornos, step=1, count=365, q_inicial=100)
 utils.save('mark', evolution)
 
 #resultado = markowitzevolution.markowitz_rolling(retornos, '2020-10-15')

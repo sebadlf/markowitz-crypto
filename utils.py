@@ -4,6 +4,10 @@ import datetime as dt
 import pandas as pd
 import numpy as np
 
+from db import BD_CONNECTION
+from sqlalchemy import create_engine
+engine = create_engine(BD_CONNECTION)
+
 ##### Conversion de Fechas ######
 def conviertoFecha(fecha_str):
     ''' La funcion acepta (dd-mm-YYYY) o (dd-mm-YYYY H) o (dd-mm-YYYY H:M) o (dd-mm-YYYY H:M:S) o (dd-mm-YYYY H:M:S:mS)'''
@@ -81,15 +85,20 @@ def file_exists(filename):
 def save(filename, data):
     
     data.to_hdf('./files/' + filename + '.h5', 'data')    
+    #data.to_sql(filename, engine, if_exists='replace')
     data.to_csv('./files/' + filename + '.csv')
     data.to_excel('./files/' + filename + '.xlsx')
         
     return data
         
 def open(filename):
+    
+    # data = pd.read_sql(filename, engine)
+
     data = pd.read_hdf('./files/' + filename + '.h5')
+    #data = data['data']
         
-    return pd.DataFrame(data)
+    return data
 
 
 def sample_sin_repetir(list, k):

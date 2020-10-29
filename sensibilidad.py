@@ -128,7 +128,6 @@ def get_analytics(yields):
 def get_sensitivity(data_serie, add_signals, get_params, cicles=1000):
     results = []
     for i in range(cicles):
-
         if ((i + 1) % 100 == 0):
             print((i + 1), end=' - ')
 

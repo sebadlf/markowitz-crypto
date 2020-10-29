@@ -7,4 +7,6 @@ engine = create_engine(BD_CONNECTION)
 
 data = utils.open('top-tickers')
 
+nnnnnnnnnnnnnnnnnnnnn
+
 data.to_sql('top_tickers', engine, if_exists='replace')
