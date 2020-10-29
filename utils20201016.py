@@ -114,6 +114,7 @@ def agrego_indicadores(data):
     
     tickers=data.columns
     retornos=pd.DataFrame()
+
     for ticker in tickers:
         retornoLog=get_retorno_log(data,ticker)
         estrategia1=cruce_medias(data,ticker,retornoLog)
@@ -122,3 +123,30 @@ def agrego_indicadores(data):
         retornos=pd.concat(frame,axis=1)
         retornos = retornos.dropna()
     return retornos
+
+
+def separarColumnas(d):
+    """
+    Inputs
+    ------
+    Diccionario con los datos del markowitz while
+
+    Returns
+    ------
+    Data frame serie del markowitz con columnas separadas y ordenadas
+
+    """
+    ac = d["activos"]
+    d["activo0"], d["activo1"], d["activo2"], d["activo3"], d["activo4"] = ac[0], ac[1], ac[2], ac[3], ac[4]
+
+    p = d["pesos"]
+    d["peso0"], d["peso1"], d["peso2"], d["peso3"], d["peso4"] = p[0],p[1],p[2],p[3],p[4]
+
+    del d["activos"]
+    del d["pesos"]
+
+    d = pd.DataFrame(d, index=[0])
+    d = d[["activo0", "activo1", "activo2", "activo3", "activo4", "peso0", "peso1", "peso2", "peso3", "peso4",
+           "retorno", "volatilidad", "sharpe", "date"]]
+
+    return d

@@ -13,6 +13,12 @@ import random
 import utils
 from cryptocompare import *
 import time
+import utils20201016
+import keys
+
+# Seteo el USER : PASS @ HOST / BBDD_NAME
+sql_engine = create_engine(keys.DB_MARKOWITZ)
+sql_conn = sql_engine.connect()
 
 def filter_tickers(data, date, minimum_rows):
     """
@@ -278,6 +284,19 @@ def markowitz_evolution(data, step=7, count=5, rolling_size=50, q_inicial=1500, 
             best_row['activos'] = lista[0]
             best_row['pesos'] = lista[1]
             # fin de ordenamiento
+
+            # guardo en base de datos MySQL
+            if i == 0:
+                guardar = utils20201016.separarColumnas(best_row)
+                guardar.to_sql(con=sql_conn, name='mark', if_exists='replace')
+
+            # descargo de la db, concateno y subo nuevamente
+            elif i != 0:
+                bajada = pd.read_sql('mark', con=sql_conn) # bajo la db
+                guardar = utils20201016.separarColumnas(best_row) #separo columnas
+
+                concatenado = pd.concat([bajada,guardar],axis=0).reset_index().drop(["level_0","index"],axis=1)
+                concatenado.to_sql(con=sql_conn, name='mark', if_exists='replace')
 
             best_mark.append(best_row)
 
