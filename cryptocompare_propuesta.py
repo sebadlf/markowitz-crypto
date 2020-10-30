@@ -74,9 +74,11 @@ listaBase=['USD','BTC']
 engine = create_engine(BD_CONNECTION)
 
 def actualizaBase():
-    for ticker in listaTicker:
-        for base in listaBase:
-            if (ticker!= base): 
+    for base in listaBase:
+        for ticker in listaTicker:
+            if (ticker!= base):
+                print(ticker, base)
+
                 tabla='cryptocompare_'+base.lower()
                 fecha=None
                 crearId=False
@@ -103,17 +105,18 @@ def actualizaBase():
                 if(fecha==None):
                     limit=2000
                 else:
+                    #Obtengo el timezoe UTC+0
                     utczone=pytz.utc.zone
+
+                    #Configuro la fecha de la DB como si fuera UTC+0
                     fecha=pytz.timezone(utczone).localize(fecha)
-                    hoy=dt.datetime.today().astimezone(pytz.utc)
-                    print(hoy,fecha)
-                    diferencia=hoy-fecha
-                    if(diferencia.days==0): 
-                        limit=1
-                    else:
-                        limit=diferencia.days
+
+                    #Obtengo la fecha actual para la zona UTC+0 y me quedo solo con la fecha
+                    hoy= dt.datetime.today().astimezone(pytz.utc).replace(minute=0, hour=0, second=0, microsecond=0)
+
+                    diferencia=hoy - fecha
+                    limit = diferencia.days + 1
                 
-                print(limit)
                 df=histoDay(fsym=ticker,tsym=base,limit=limit)
                 
 #                print(df)
