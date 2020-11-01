@@ -28,17 +28,36 @@ engine = create_engine(BD_CONNECTION)
 r = requests.get('https://www.okex.com/api/futures/v3/instruments')
 contracts = r.json()
 
-for contract in contracts:
+# SQLcrearIndice = f'ALTER TABLE okex_futures ADD `id` INT NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`)'
+# engine.execute(SQLcrearIndice)
 
+for contract in contracts:
 
     ticker = contract['underlying_index']
     contract_id = contract['instrument_id']
 
     if (ticker != 'LINK') and (ticker != 'DOT'):
 
+        last_row_query = f'SELECT `id`,`time` FROM okex_futures WHERE `contract` = "{contract_id}" ORDER BY `id` DESC limit 0,1'
+        last_row = engine.execute(last_row_query).fetchone()
+
+        print(last_row)
+
+        params = {}
+
+        # if last_row:
+        #     id = last_row[0]
+        #     time = last_row[1]
+        #
+        #     delete_last_row_query = f'DELETE FROM okex_futures WHERE `id`={id}'
+        #     engine.execute(delete_last_row_query)
+        #
+        #     params['time'] = time
+
         print(ticker)
 
         url = f'https://www.okex.com/api/futures/v3/instruments/{contract_id}/history/candles'
+
         # params = {
         #     'start': '2020-07-25T02:31:00.000Z',
         #     'end': '2020-07-24T02:55:00.000Z',
@@ -65,7 +84,7 @@ for contract in contracts:
         df['ticker'] = ticker
         df['contract'] = contract_id
 
-        df.to_sql('okex_furures', engine, if_exists='append')
+        df.to_sql('okex_futures', engine, if_exists='append')
 
 
 
