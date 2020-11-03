@@ -1,6 +1,3 @@
-
-
-
 import requests
 import pandas as pd
 from db import BD_CONNECTION
@@ -28,8 +25,24 @@ engine = create_engine(BD_CONNECTION)
 r = requests.get('https://www.okex.com/api/futures/v3/instruments')
 contracts = r.json()
 
-# SQLcrearIndice = f'ALTER TABLE okex_futures ADD `id` INT NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`)'
-# engine.execute(SQLcrearIndice)
+create_table = '''
+CREATE TABLE IF NOT EXISTS `okex_futures` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `contract` varchar(30) DEFAULT NULL,
+  `ticker` varchar(20) DEFAULT NULL,
+  `time` timestamp NULL DEFAULT NULL,
+  `open` double DEFAULT NULL,
+  `high` double DEFAULT NULL,
+  `low` double DEFAULT NULL,
+  `close` double DEFAULT NULL,
+  `count_contracts` bigint(20) DEFAULT NULL,
+  `volume` double DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_contract_ticker_time` (`contract`,`ticker`,`time`),
+  KEY `idx_ticker_time` (`ticker`,`time`)
+) ENGINE=InnoDB AUTO_INCREMENT=14401 DEFAULT CHARSET=latin1;
+'''
+engine.execute(create_table)
 
 for contract in contracts:
 

@@ -60,7 +60,6 @@ for ticker in tickers:
         js = r.json()
         df = pd.DataFrame(js)
 
-
         df.columns = ['time', 'open', 'high', 'low', 'close', 'volume']
 
         df.time = pd.to_datetime(df.time)
