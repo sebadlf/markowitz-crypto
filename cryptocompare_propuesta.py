@@ -127,9 +127,7 @@ def actualizaBase():
                 df.to_sql(tabla, engine, if_exists='append')
                 
                 if(crearId):
-                    SQLcrearIndice=f'ALTER TABLE `{tabla}` ADD `id` INT NOT NULL AUTO_INCREMENT FIRST, ADD PRIMARY KEY (`id`)'
-                    resultado=engine.execute(SQLcrearIndice)
-actualizaBase()
+wactualizaBase()
 
             
 '''

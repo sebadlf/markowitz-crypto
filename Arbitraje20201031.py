@@ -1,11 +1,12 @@
 #!pip install PyMySQL
 from sqlalchemy import create_engine
+from db import BD_CONNECTION
+import requests
+import pandas as pd
 
 #Seteo el USER : PASS @ HOST / BBDD_NAME
-sql_engine = create_engine('mysql+pymysql://root:@localhost/tpmodulo3')
+sql_engine = create_engine(BD_CONNECTION)
 sql_conn = sql_engine.connect()
-
-
 
 def B_Bajada(fsym='BTC',tsym='USDT', interval='1d', startTime=None, endTime=None, limit=1000):
     '''bajadaSimple('BTCUSDT',interval='2h',startTime=1597719600000,endTime=1600398000000)'''

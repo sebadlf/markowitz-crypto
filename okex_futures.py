@@ -54,6 +54,8 @@ for contract in contracts:
         #
         #     params['time'] = time
 
+        busquedaUltimaFecha = f'SELECT `id`,`time` FROM `{tabla}` WHERE `ticker` = "{ticker}" ORDER BY `id` DESC limit 0,1'
+
         print(ticker)
 
         url = f'https://www.okex.com/api/futures/v3/instruments/{contract_id}/history/candles'
